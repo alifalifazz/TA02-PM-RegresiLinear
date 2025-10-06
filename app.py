@@ -7,7 +7,8 @@ app = Flask(__name__)
 
 # Muat model regresi linear
 MODEL_PATH = os.path.join("model", "model.pkl")
-model = pickle.load(open(MODEL_PATH, "rb"))
+with open(MODEL_PATH, "rb") as file:
+    model = pickle.load(file)
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
@@ -18,10 +19,11 @@ def index():
         try:
             tv_budget = float(request.form['tv'])
             prediction = model.predict(np.array([[tv_budget]]))[0]
-        except:
-            prediction = "Input tidak valid"
+        except Exception as e:
+            prediction = f"Input tidak valid: {e}"
 
     return render_template('index.html', prediction=prediction, tv=tv_budget)
 
-if __name__ == '__main__':
-    app.run(debug=True)
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 8080))   
+    app.run(host="0.0.0.0", port=port)         
