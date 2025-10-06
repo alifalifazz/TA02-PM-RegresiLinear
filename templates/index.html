@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <title>Prediksi Penjualan Produk</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>Prediksi Penjualan Berdasarkan Iklan TV</h1>
+        <form method="POST">
+            <label>Masukkan Biaya Iklan TV (ribu dolar):</label><br>
+            <input type="number" name="tv" step="0.01" required><br>
+            <button type="submit">Prediksi</button>
+        </form>
+
+        {% if prediction is not none %}
+        <div class="result">
+            <hr>
+            <p><b>Biaya Iklan TV:</b> {{ tv }} ribu dolar</p>
+            <p><b>Hasil Prediksi Penjualan:</b> {{ prediction|round(3) }} ribu unit</p>
+        </div>
+        {% endif %}
+    </div>
+</body>
+</html>
