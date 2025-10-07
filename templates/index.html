@@ -4,22 +4,127 @@
     <meta charset="UTF-8">
     <title>Prediksi Penjualan Produk</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
     <div class="container">
-        <h1>Prediksi Penjualan Berdasarkan Iklan TV</h1>
+        <!-- Bagian Judul dan Form selalu tampil -->
+        <h1>Prediksi Penjualan Berdasarkan Anggaran Iklan</h1>
+        <p class="subtitle">Masukkan anggaran untuk memprediksi penjualan yang dihasilkan.</p>
+
         <form method="POST">
-            <label>Masukkan Biaya Iklan TV (ribu dolar):</label><br>
-            <input type="number" name="tv" step="0.01" required><br>
-            <button type="submit">Prediksi</button>
+            <div class="grid">
+                <div class="form-group">
+                    <label>Biaya Iklan TV (ribu dolar):</label>
+                    <input type="number" name="tv" step="0.01" value="{{ tv if tv is not none else '' }}" required>
+                </div>
+                <div class="form-group">
+                    <label>Biaya Iklan Radio (ribu dolar):</label>
+                    <input type="number" name="radio" step="0.01" value="{{ radio if radio is not none else '' }}" required>
+                </div>
+                <div class="form-group">
+                    <label>Biaya Iklan Koran (ribu dolar):</label>
+                    <input type="number" name="newspaper" step="0.01" value="{{ newspaper if newspaper is not none else '' }}" required>
+                </div>
+            </div>
+            <button type="submit">Prediksi Sales</button>
         </form>
 
+        <!-- Bagian hasil hanya muncul setelah prediksi tersedia -->
         {% if prediction is not none %}
-        <div class="result">
-            <hr>
-            <p><b>Biaya Iklan TV:</b> {{ tv }} ribu dolar</p>
-            <p><b>Hasil Prediksi Penjualan:</b> {{ prediction|round(3) }} ribu unit</p>
+        <div class="result card" style="margin-top: 20px;">
+            <div class="kpi">
+                <div class="value">{{ prediction|round(2) }}</div>
+                <div class="label">Unit Sales yang Diprediksi</div>
+            </div>
+
+            <div class="cards">
+                {% if base_sales is not none %}
+                <div class="card-item"><b>Base Sales</b><br>{{ base_sales|round(3) }} unit</div>
+                {% endif %}
+                {% if contributions %}
+                <div class="card-item"><b>TV Contribution</b><br>{{ contributions['TV']|round(3) }} unit</div>
+                <div class="card-item"><b>Radio Contribution</b><br>{{ contributions['Radio']|round(3) }} unit</div>
+                <div class="card-item"><b>Newspaper Contribution</b><br>{{ contributions['Newspaper']|round(3) }} unit</div>
+                {% endif %}
+            </div>
         </div>
+
+        <!-- Grafik kontribusi -->
+        <div class="card" style="margin-top:10px;">
+            <canvas id="mediaChart"></canvas>
+        </div>
+
+        <!-- Evaluasi Model -->
+        <div class="model-info card" style="margin-top:10px;">
+            <p><b>Evaluasi Performa Model</b></p>
+            <ul>
+                <li>Mean Absolute Error (MAE): 1.2137</li>
+                <li>Mean Squared Error (MSE): 2.2987</li>
+                <li>Root Mean Squared Error (RMSE): 1.5161</li>
+                <li>R-squared (R2): 0.9186</li>
+            </ul>
+        </div>
+
+        <!-- Koefisien Model -->
+        <div class="model-info card" style="margin-top:10px;">
+            <p><b>Menampilkan intersep dan koefisien</b></p>
+            <p>intercept: 3.1515</p>
+            <p>coefficient</p>
+            <ul>
+                <li>TV Ad Budget ($): 0.044696</li>
+                <li>Radio Ad Budget ($): 0.187566</li>
+                <li>Newspaper Ad Budget ($): -0.000323</li>
+            </ul>
+        </div>
+
+        <!-- Visualisasi Gambar -->
+        <div class="card" style="margin-top:10px;">
+            <p><b>Visualisasi hubungan antar variabel</b></p>
+            <img src="{{ url_for('static', filename='Visualisasi hubungan antar variabel.png') }}" 
+                 alt="Visualisasi hubungan antar variabel" 
+                 style="max-width:100%; border-radius:8px;">
+        </div>
+
+        <div class="card" style="margin-top:10px;">
+            <p><b>Visualisasi hasil prediksi vs nilai aktual</b></p>
+            <img src="{{ url_for('static', filename='Visualisasi hasil prediksi vs nilai aktual.png') }}" 
+                 alt="Visualisasi hasil prediksi vs nilai aktual" 
+                 style="max-width:100%; border-radius:8px;">
+        </div>
+
+        <script id="contrib-data" type="application/json">
+            {{ (contributions or {'TV': 0, 'Radio': 0, 'Newspaper': 0}) | tojson }}
+        </script>
+
+        <script>
+            (function(){
+                var el = document.getElementById('mediaChart');
+                if(!el) return;
+                var contrib = {};
+                try {
+                    var raw = document.getElementById('contrib-data');
+                    if (raw && raw.textContent) contrib = JSON.parse(raw.textContent);
+                } catch (e) { contrib = { TV: 0, Radio: 0, Newspaper: 0 }; }
+                var chart = new Chart(el, {
+                    type: 'bar',
+                    data: {
+                        labels: ['TV', 'Radio', 'Newspaper'],
+                        datasets: [{
+                            label: 'Kontribusi (unit)',
+                            data: [contrib.TV, contrib.Radio, contrib.Newspaper],
+                            backgroundColor: ['#4e79a7','#f28e2b','#e15759'],
+                            borderRadius: 6
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        scales: { y: { beginAtZero: true } },
+                        plugins: { legend: { display: false } }
+                    }
+                });
+            })();
+        </script>
         {% endif %}
     </div>
 </body>
